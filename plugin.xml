@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<plugin version="php">
+  <id>qingBotBlock</id>
+  <name>清歌AI爬虫屏蔽</name>
+  <url>https://jiyun.xin/yun/</url>
+  <note>拦截 GPTBot、ClaudeBot、Bytespider 等各类 AI 爬虫，降低服务器负载</note>
+  <description>基于 User-Agent 的 AI 爬虫拦截，在页面渲染前直接拒绝请求；支持拦截列表与白名单双向控制。响应状态码（403 / 200）与响应内容（内置拦截页 / 空白页 / 自定义模板）分别设置，并记录拦截日志。</description>
+  <path>main.php</path>
+  <include>include.php</include>
+  <level>1</level>
+  <author>
+    <name>清歌</name>
+    <email></email>
+    <url>https://jiyun.xin/yun/</url>
+  </author>
+  <source>
+    <name>清歌</name>
+    <email></email>
+    <url>https://jiyun.xin/yun/</url>
+  </source>
+  <adapted>1.7</adapted>
+  <version>1.6.0</version>
+  <pubdate>2026-09-18</pubdate>
+  <modified>2026-09-18</modified>
+  <price>0</price>
+  <phpver>5.2</phpver>
+  <advanced>
+    <dependency></dependency>
+    <rewritefunctions></rewritefunctions>
+    <existsfunctions></existsfunctions>
+    <conflict></conflict>
+  </advanced>
+  <sidebars>
+    <sidebar1></sidebar1>
+    <sidebar2></sidebar2>
+    <sidebar3></sidebar3>
+    <sidebar4></sidebar4>
+    <sidebar5></sidebar5>
+    <sidebar6></sidebar6>
+    <sidebar7></sidebar7>
+    <sidebar8></sidebar8>
+    <sidebar9></sidebar9>
+  </sidebars>
+</plugin>

@@ -1,4 +1,4 @@
-/* 清歌AI蜘蛛屏蔽 · 后台交互 */
+/* 清歌AI蜘蛛屏蔽 · 后台交互 */ 
 
 ((window, document) => {
     const cfg = window.QBB || {};

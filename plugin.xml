@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <plugin version="php">
   <id>qingBotBlock</id>
-  <name>清歌AI爬虫屏蔽</name>
+  <name>清歌AI蜘蛛屏蔽</name>
   <url>https://jiyun.xin/yun/</url>
-  <note>拦截 GPTBot、ClaudeBot、Bytespider 等各类 AI 爬虫，降低服务器负载</note>
-  <description>基于 User-Agent 的 AI 爬虫拦截，在页面渲染前直接拒绝请求；支持拦截列表与白名单双向控制。响应状态码（403 / 200）与响应内容（内置拦截页 / 空白页 / 自定义模板）分别设置，并记录拦截日志。</description>
+  <note>按 User-Agent 在模板渲染前拦截 AI 蜘蛛请求，拦截列表与白名单可自行增删</note>
+  <description>按 User-Agent 子串匹配（忽略大小写）拦截 AI 蜘蛛的请求，在 Z-Blog 模板渲染之前返回，不查询数据库、不加载主题模板。拦截列表与白名单分别维护，白名单优先判断。响应状态码（403 / 200）与响应内容（内置拦截页 / 空白页 / 自定义模板）为两项独立设置，自定义模板支持变量替换。可记录拦截日志（时间 / IP / 命中关键词 / User-Agent）。依据 User-Agent 判定，无法拦截伪造 UA 的请求，也不能替代服务器层的访问控制。</description>
   <path>main.php</path>
   <include>include.php</include>
   <level>1</level>
@@ -19,9 +19,9 @@
     <url>https://jiyun.xin/yun/</url>
   </source>
   <adapted>1.7</adapted>
-  <version>1.7.0</version>
+  <version>1.9.2</version>
   <pubdate>2026-09-18</pubdate>
-  <modified>2026-09-18</modified>
+  <modified>2026-09-19</modified>
   <price>0</price>
   <phpver>5.2</phpver>
   <advanced>

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * 清歌AI爬虫屏蔽
+ * 清歌AI蜘蛛屏蔽
  *
  * @author 清歌
  * @link https://jiyun.xin/yun/
@@ -32,7 +32,7 @@ if (!defined('QING_BOTBLOCK_INCLUDED')) {
     function qingBotBlock_TopMenu(&$menus)
     {
         global $zbp;
-        $menus[] = MakeTopMenu('root', 'AI爬虫屏蔽', $zbp->host . 'zb_users/plugin/qingBotBlock/main.php', '', '');
+        $menus[] = MakeTopMenu('root', '清歌AI蜘蛛屏蔽', $zbp->host . 'zb_users/plugin/qingBotBlock/main.php', '', 'qingBotBlock', 'icon-shield-fill-x');
     }
 
     function InstallPlugin_qingBotBlock()
@@ -48,6 +48,7 @@ if (!defined('QING_BOTBLOCK_INCLUDED')) {
         $cfg->custom_body = qingBotBlock_DefaultBody();
         $cfg->block_empty = 0;
         $cfg->log = 1;
+        $cfg->log_per = 50;
         $cfg->rules = qingBotBlock_DefaultRules();
         $cfg->whitelist = qingBotBlock_DefaultWhitelist();
         $cfg->DelConfig = 0;

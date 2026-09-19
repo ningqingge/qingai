@@ -17,7 +17,7 @@ if (!$zbp->CheckPlugin('qingBotBlock')) {
     die();
 }
 
-$blogtitle = 'AI爬虫屏蔽';
+$blogtitle = '清歌AI蜘蛛屏蔽';
 
 qingBotBlock_Upgrade();
 
@@ -34,8 +34,13 @@ if (count($_POST) > 0) {
     if ($post_tab != 'log') {
         $post_tab = 'rules';
     }
-    if (GetVars('act', 'POST') == 'clearlog') {
+    $act = GetVars('act', 'POST');
+    if ($act == 'clearlog') {
         qingBotBlock_ClearLog();
+    } elseif ($act == 'logper') {
+        $cfg = $zbp->Config('qingBotBlock');
+        $cfg->log_per = qingBotBlock_PerPage(GetVars('log_per', 'POST'));
+        $zbp->SaveConfig('qingBotBlock');
     } else {
         $cfg = $zbp->Config('qingBotBlock');
         $cfg->enable = (int) GetVars('enable', 'POST');
@@ -61,13 +66,27 @@ if (count($_POST) > 0) {
 $cfg = $zbp->Config('qingBotBlock');
 $rules = qingBotBlock_ToArray($cfg->rules);
 $white = qingBotBlock_ToArray($cfg->whitelist);
-$log = qingBotBlock_ReadLog(50);
 $body = (trim((string) $cfg->custom_body) == '') ? qingBotBlock_DefaultBody() : $cfg->custom_body;
 list($pref_status, $pref_content) = qingBotBlock_Prefs($cfg);
 
+$per_page = qingBotBlock_LogPer($cfg);
+$page = isset($_GET['page']) ? (int) $_GET['page'] : 1;
+if ($page < 1) {
+    $page = 1;
+}
+$log = qingBotBlock_ReadLog($per_page, ($page - 1) * $per_page);
+$page_count = (int) ceil($log['total'] / $per_page);
+if ($page_count < 1) {
+    $page_count = 1;
+}
+if ($page > $page_count) {
+    $page = $page_count;
+    $log = qingBotBlock_ReadLog($per_page, ($page - 1) * $per_page);
+}
+
 $content_hint = array(
     'preset' => '使用插件自带的拦截页模板，内容固定不可修改，会跟随上方状态码显示对应字样',
-    'blank' => '只返回状态码与空页面，不输出任何内容，最省服务器流量',
+    'blank' => '只返回状态码与空页面，不输出页面内容',
     'custom' => '使用下方自定义模板，可用变量插入站点、IP、UA 等信息',
 );
 
@@ -100,8 +119,8 @@ require $blogpath . 'zb_system/admin/admin_top.php';
         <img class="qbb-hero-logo" src="<?php echo qingBotBlock_Esc(qingBotBlock_AssetUrl('logo.png')); ?>" alt="" width="46" height="46">
         <div class="qbb-hero-body">
           <span class="qbb-badge qbb-badge-<?php echo $cfg->enable ? 'on' : 'off'; ?>"><i></i><?php echo $cfg->enable ? '防护已开启' : '防护已关闭'; ?></span>
-          <h2>AI 爬虫拦截</h2>
-          <p>命中拦截列表的请求会在模板渲染之前被直接拒绝，不查询数据库、不加载主题，对正常访客几乎没有影响。</p>
+          <h2>清歌AI蜘蛛屏蔽</h2>
+          <p>命中拦截列表的请求会在模板渲染之前直接返回，不查询数据库、不加载主题模板。判定依据是 User-Agent 字符串，伪造 UA 的请求无法被拦截。</p>
         </div>
       </div>
       <div class="qbb-stats">
@@ -130,7 +149,7 @@ require $blogpath . 'zb_system/admin/admin_top.php';
             <label class="qbb-switch"><input type="checkbox" name="enable" value="1" <?php echo $cfg->enable ? 'checked' : ''; ?>><i></i></label>
           </div>
           <div class="qbb-line">
-            <div class="qbb-line-txt"><strong>响应状态码</strong><span>写在 HTTP 响应头里，页面内容看不到它。403 更规范；200 对爬虫更隐蔽，但它会认为抓取成功</span></div>
+            <div class="qbb-line-txt"><strong>响应状态码</strong><span>写在 HTTP 响应头里，页面内容看不到它。403 更规范；200 对蜘蛛更隐蔽，但它会认为抓取成功</span></div>
             <div class="qbb-seg">
               <label class="qbb-seg-item"><input type="radio" name="status" value="403" <?php echo $pref_status == '403' ? 'checked' : ''; ?>><span>403 Forbidden</span></label>
               <label class="qbb-seg-item"><input type="radio" name="status" value="200" <?php echo $pref_status == '200' ? 'checked' : ''; ?>><span>200 OK</span></label>
@@ -174,7 +193,7 @@ require $blogpath . 'zb_system/admin/admin_top.php';
           <div class="qbb-pane qbb-pane-blank">
             <div class="qbb-note">
               <strong>空白页 · 不输出内容</strong>
-              <span>只返回一行状态码和一个空 body，不渲染任何可见内容，对服务器最省资源。点右上角「预览效果」可查看实际返回的页面。</span>
+              <span>只返回一行状态码和一个空 body，不渲染任何可见内容，不输出页面内容。点右上角「预览效果」可查看实际返回的页面。</span>
             </div>
           </div>
 
@@ -210,7 +229,7 @@ require $blogpath . 'zb_system/admin/admin_top.php';
         </div>
         <div class="qbb-card-bd">
           <textarea id="qbbRules" name="rules" class="qbb-ta" rows="14" spellcheck="false" wrap="off"><?php echo htmlspecialchars($cfg->rules, ENT_QUOTES, 'UTF-8'); ?></textarea>
-          <div class="qbb-meta"><b id="qbbRulesCount"></b><span>UA 中命中其中任意一行关键词，即判定为爬虫</span></div>
+          <div class="qbb-meta"><b id="qbbRulesCount"></b><span>UA 中命中其中任意一行关键词，即按蜘蛛处理</span></div>
         </div>
       </div>
 
@@ -218,7 +237,7 @@ require $blogpath . 'zb_system/admin/admin_top.php';
         <div class="qbb-card-hd"><h3>白名单</h3><span class="qbb-hint">优先级高于拦截规则，命中即放行</span></div>
         <div class="qbb-card-bd">
           <textarea id="qbbWhite" name="whitelist" class="qbb-ta" rows="8" spellcheck="false" wrap="off"><?php echo htmlspecialchars($cfg->whitelist, ENT_QUOTES, 'UTF-8'); ?></textarea>
-          <div class="qbb-meta"><b id="qbbWhiteCount"></b><span>主流搜索引擎默认放行，不影响正常收录</span></div>
+          <div class="qbb-meta"><b id="qbbWhiteCount"></b><span>主流搜索引擎默认在列，命中即放行</span></div>
         </div>
       </div>
 
@@ -233,7 +252,7 @@ require $blogpath . 'zb_system/admin/admin_top.php';
       </div>
 
       <div class="qbb-bar">
-        <span class="qbb-bar-tip">拦截在请求最开始执行，不影响正常访客与搜索引擎收录</span>
+        <span class="qbb-bar-tip">拦截在请求最开始执行，白名单命中的请求直接放行</span>
         <button type="submit" class="qbb-btn qbb-btn-save">保存设置</button>
       </div>
 
@@ -243,8 +262,21 @@ require $blogpath . 'zb_system/admin/admin_top.php';
 
     <div class="qbb-card">
       <div class="qbb-card-hd">
-        <h3>拦截日志</h3><span class="qbb-hint">累计 <?php echo $log['total']; ?> 条，显示最近 50 条</span>
+        <h3>拦截日志</h3><span class="qbb-hint">累计 <?php echo $log['total']; ?> 条，第 <?php echo $page; ?> / <?php echo $page_count; ?> 页，每页 <?php echo $per_page; ?> 条</span>
         <div class="qbb-tools">
+          <form method="post" action="./main.php">
+            <input type="hidden" name="csrfToken" value="<?php echo $zbp->GetCSRFToken(); ?>">
+            <input type="hidden" name="tab" value="log">
+            <input type="hidden" name="act" value="logper">
+            <label class="qbb-per">
+              <span>每页</span>
+              <select name="log_per" data-auto-submit="1">
+<?php foreach (array(50, 100, 200, 500) as $opt): ?>
+                <option value="<?php echo $opt; ?>"<?php echo $opt == $per_page ? ' selected' : ''; ?>><?php echo $opt; ?> 条</option>
+<?php endforeach; ?>
+              </select>
+            </label>
+          </form>
           <form method="post" action="./main.php" data-confirm="确定清空全部拦截日志吗？此操作不可恢复。">
             <input type="hidden" name="csrfToken" value="<?php echo $zbp->GetCSRFToken(); ?>">
             <input type="hidden" name="tab" value="log">
@@ -273,6 +305,42 @@ require $blogpath . 'zb_system/admin/admin_top.php';
 <?php endforeach; ?>
           </tbody>
         </table>
+<?php if ($page_count > 1): ?>
+        <div class="qbb-pager">
+          <span class="qbb-pager-info">共 <?php echo $log['total']; ?> 条记录，当前第 <?php echo $page; ?> / <?php echo $page_count; ?> 页</span>
+          <span class="qbb-pager-links">
+<?php
+$qbb_first = max(1, $page - 2);
+$qbb_last = min($page_count, $page + 2);
+$qbb_pages = array();
+if ($qbb_first > 1) {
+    $qbb_pages[] = 1;
+}
+if ($qbb_first > 2) {
+    $qbb_pages[] = 0;
+}
+for ($qbb_i = $qbb_first; $qbb_i <= $qbb_last; $qbb_i++) {
+    $qbb_pages[] = $qbb_i;
+}
+if ($qbb_last < $page_count - 1) {
+    $qbb_pages[] = 0;
+}
+if ($qbb_last < $page_count) {
+    $qbb_pages[] = $page_count;
+}
+?>
+            <a class="qbb-page<?php echo $page <= 1 ? ' qbb-page-off' : ''; ?>" href="./main.php?tab=log&amp;page=<?php echo $page - 1; ?>">上一页</a>
+<?php foreach ($qbb_pages as $qbb_p): ?>
+<?php if ($qbb_p == 0): ?>
+            <span class="qbb-page-gap">…</span>
+<?php else: ?>
+            <a class="qbb-page<?php echo $qbb_p == $page ? ' qbb-page-now' : ''; ?>" href="./main.php?tab=log&amp;page=<?php echo $qbb_p; ?>"><?php echo $qbb_p; ?></a>
+<?php endif; ?>
+<?php endforeach; ?>
+            <a class="qbb-page<?php echo $page >= $page_count ? ' qbb-page-off' : ''; ?>" href="./main.php?tab=log&amp;page=<?php echo $page + 1; ?>">下一页</a>
+          </span>
+        </div>
+<?php endif; ?>
 <?php else: ?>
         <div class="qbb-blank">
           <i></i>

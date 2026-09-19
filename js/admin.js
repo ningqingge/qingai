@@ -1,4 +1,4 @@
-/* 清歌AI爬虫屏蔽 · 后台交互 */
+/* 清歌AI蜘蛛屏蔽 · 后台交互 */
 
 ((window, document) => {
     const cfg = window.QBB || {};
@@ -155,7 +155,7 @@
 
         const tip = doc.createElement('p');
         tip.className = 'qbb-pv-tip';
-        tip.append('状态码属于 HTTP 响应头，页面内容里不显示它，所以下面的页面本身看不到这个数字。爬虫收到的是 ');
+        tip.append('状态码属于 HTTP 响应头，页面内容里不显示它，所以下面的页面本身看不到这个数字。蜘蛛收到的是 ');
         const tipCode = doc.createElement('b');
         tipCode.textContent = state.code + ' ' + state.text;
         tip.append(tipCode, '。下面是实际输出的页面内容：');
@@ -261,6 +261,14 @@
         form.addEventListener('submit', (e) => {
             if (!window.confirm(form.dataset.confirm)) {
                 e.preventDefault();
+            }
+        });
+    });
+
+    document.querySelectorAll('select[data-auto-submit]').forEach((select) => {
+        select.addEventListener('change', () => {
+            if (select.form) {
+                select.form.submit();
             }
         });
     });
